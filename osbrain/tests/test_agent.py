@@ -4,6 +4,7 @@ Test file for agents.
 import os
 import time
 import random
+import signal
 from uuid import uuid4
 from threading import Timer
 
@@ -69,6 +70,37 @@ def test_ping(nsaddr):
     """
     a0 = run_agent('a0')
     assert a0.ping() == 'pong'
+
+
+def test_SIGINT(nsaddr):
+    """
+    Test SIGINT (simulation) signal on a non NameServer agent.
+    """
+    class NewAgent(Agent):
+        def simulate_SIGINT(self):
+            os.kill(os.getpid(), signal.SIGINT)
+
+    ns = NSProxy(nsaddr)
+
+    # Test SIGINT on an Agent based on the new class
+    AgentProcess('new', nsaddr=nsaddr, base=NewAgent).start()
+    new = Proxy('new', nsaddr)
+    new.run()
+    assert 'new' in ns.list()
+    assert new.ping() == 'pong'
+    new.simulate_SIGINT()
+    with pytest.raises(Exception):
+        assert new.ping() == 'pong'
+    assert 'new' not in ns.list()
+
+    # Test SIGINT on the quick `run_agent` function
+    a0 = run_agent('a0', nsaddr, base=NewAgent)
+    assert 'a0' in ns.list()
+    assert a0.ping() == 'pong'
+    a0.simulate_SIGINT()
+    with pytest.raises(Exception):
+        assert a0.ping() == 'pong'
+    assert 'a0' not in ns.list()
 
 
 def test_agent_shutdown(nsaddr):
