@@ -5,6 +5,7 @@ import os
 import time
 import random
 import multiprocessing
+import signal
 
 import Pyro4
 from Pyro4.naming import BroadcastServer
@@ -21,6 +22,7 @@ class NameServer(Pyro4.naming.NameServer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.shutdown_parent_daemon = False
+        signal.signal(signal.SIGINT, self._sigint_handler)
 
     def ping(self):
         """
@@ -54,6 +56,17 @@ class NameServer(Pyro4.naming.NameServer):
         """
         self.async_shutdown_agents()
         self.shutdown_parent_daemon = True
+
+    def _sigint_handler(self, _signal, _frame):
+        """
+        Handle the first SIGINT signal.
+
+        The nameserver will try to end gracefully for the first SIGINT. For
+        successive signals, this handler will be deactivated.
+        """
+        self.async_shutdown()
+        # Restore default Python SIGINT handler (KeyboardInterrupt)
+        signal.signal(signal.SIGINT, signal.default_int_handler)
 
 
 Pyro4.naming.NameServer = NameServer
@@ -148,7 +161,8 @@ class NameServerProcess(multiprocessing.Process):
 
 
 def random_nameserver_process(host='127.0.0.1', port_start=10000,
-                              port_stop=20000, timeout=3.):
+                              port_stop=20000, timeout=3.,
+                              base=NameServerProcess):
     """
     Start a random NameServerProcess.
 
@@ -182,7 +196,7 @@ def random_nameserver_process(host='127.0.0.1', port_start=10000,
             raise exception
 
 
-def run_nameserver(addr=None):
+def run_nameserver(addr=None, base=NameServerProcess):
     """
     Ease the name server creation process.
 
@@ -200,7 +214,7 @@ def run_nameserver(addr=None):
         A proxy to the name server.
     """
     if not addr:
-        addr = random_nameserver_process().addr
+        addr = random_nameserver_process(base=base).addr
     else:
         NameServerProcess(addr).start()
     return NSProxy(addr)

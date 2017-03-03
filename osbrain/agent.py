@@ -1253,11 +1253,12 @@ class AgentProcess(multiprocessing.Process):
         self.base = base
         self.shutdown_event = multiprocessing.Event()
         self.queue = multiprocessing.Queue()
-        self.sigint = False
+        # We only want to handle the first SIGINT received.
+        self._sigint_received = False
 
     def run(self):
         # Capture SIGINT
-        signal.signal(signal.SIGINT, self.sigint_handler)
+        signal.signal(signal.SIGINT, self._sigint_handler)
 
         try:
             ns = NSProxy(self.nsaddr)
@@ -1287,7 +1288,7 @@ class AgentProcess(multiprocessing.Process):
             ns = NSProxy(self.nsaddr, timeout=1.)
             ns.remove(self.name)
         except PyroError:
-            if not self.sigint:
+            if not self._sigint_received:
                 sys.stderr.write(format_exception())
                 raise
         finally:
@@ -1307,12 +1308,17 @@ class AgentProcess(multiprocessing.Process):
         if self.daemon:
             self.daemon.shutdown()
 
-    def sigint_handler(self, signal, frame):
+    def _sigint_handler(self, _signal, _frame):
         """
-        Handle interruption signals.
+        Handle the first SIGINT signal.
+
+        The agent will try to end gracefully for the first SIGINT. For
+        successive signals, this handler will be deactivated.
         """
-        self.sigint = True
-        self.kill()
+        self.agent.shutdown()
+        # Restore default Python SIGINT handler (KeyboardInterrupt)
+        signal.signal(signal.SIGINT, signal.default_int_handler)
+        self._sigint_received = True
 
 
 def run_agent(name, nsaddr=None, addr=None, base=Agent, serializer=None):

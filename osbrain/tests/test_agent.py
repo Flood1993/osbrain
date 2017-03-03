@@ -4,10 +4,12 @@ Test file for agents.
 import os
 import time
 import random
+import signal
 from uuid import uuid4
 from threading import Timer
 
 import pytest
+import Pyro4
 
 from osbrain import run_logger
 from osbrain import run_agent
@@ -16,12 +18,26 @@ from osbrain import AgentAddress
 from osbrain import AgentProcess
 from osbrain import Proxy
 from osbrain import NSProxy
+from osbrain.nameserver import NameServer
+from osbrain.nameserver import run_nameserver
 from osbrain import SocketAddress
 
 from common import nsaddr  # pragma: no flakes
 from common import nsproxy  # pragma: no flakes
 from common import logger_received
 from common import sync_agent_logger
+
+
+def active_processes_pid_list():
+    """
+    Return a list containing the PID's of active processes in the system.
+
+    Returns
+    -------
+    list (int)
+        List containing the PIDs as integers.
+    """
+    return [int(pid) for pid in os.listdir('/proc') if pid.isdigit()]
 
 
 def set_received(agent, message, topic=None):
@@ -69,6 +85,144 @@ def test_ping(nsaddr):
     """
     a0 = run_agent('a0')
     assert a0.ping() == 'pong'
+
+
+def test_sigint_agent_shutdown(nsaddr):
+    """
+    Test SIGINT (simulation) signal on a non NameServer agent.
+
+    A single signal is sent: we want the agent to shut down gracefully.
+    Two seconds are given to give enough time to free the resources.
+    """
+    class NewAgent(Agent):
+        def simulate_sigint(self):
+            os.kill(os.getpid(), signal.SIGINT)
+
+        def get_pid(self):
+            return os.getpid()
+
+    ns = NSProxy(nsaddr)
+
+    # Test SIGINT on an Agent based on the new class
+    AgentProcess('new', nsaddr=nsaddr, base=NewAgent).start()
+    new = Proxy('new', nsaddr)
+    new.run()
+    agent_pid = new.get_pid()
+    assert 'new' in ns.list()
+    assert new.ping() == 'pong'
+    assert agent_pid in active_processes_pid_list()
+    new.simulate_sigint()
+    time0 = time.time()
+    while time.time() - time0 < 5 and 'new' in ns.list():
+        time.sleep(0.2)
+    with pytest.raises(Exception):
+        assert new.ping() == 'pong'
+    assert 'new' not in ns.list()
+    assert agent_pid not in active_processes_pid_list()
+
+    # Test SIGINT on the quick `run_agent` function
+    a0 = run_agent('a0', nsaddr, base=NewAgent)
+    agent_pid = a0.get_pid()
+    assert agent_pid in active_processes_pid_list()
+    assert 'a0' in ns.list()
+    assert a0.ping() == 'pong'
+    a0.simulate_sigint()
+    time0 = time.time()
+    while time.time() - time0 < 5 and 'a0' in ns.list():
+        time.sleep(0.2)
+    with pytest.raises(Exception):
+        assert a0.ping() == 'pong'
+    assert 'a0' not in ns.list()
+    assert agent_pid not in active_processes_pid_list()
+
+
+def test_sigint_agent_kill(nsaddr):
+    """
+    Test SIGINT (simulation) signal on a non NameServer agent.
+
+    Two signals are sent: we want the agent to shut down immediately.
+    No time is given to free the resources.
+    """
+    class NewAgent(Agent):
+        def simulate_sigint(self):
+            os.kill(os.getpid(), signal.SIGINT)
+
+        def get_pid(self):
+            return os.getpid()
+
+    ns = NSProxy(nsaddr)
+
+    # Test SIGINT on an Agent based on the new class
+    AgentProcess('new', nsaddr=nsaddr, base=NewAgent).start()
+    new = Proxy('new', nsaddr)
+    new.run()
+    agent_pid = new.get_pid()
+    assert agent_pid in active_processes_pid_list()
+    assert 'new' in ns.list()
+    assert new.ping() == 'pong'
+    new.simulate_sigint()
+    # The second signal should raise an exception
+    with pytest.raises(Exception):
+        new.simulate_sigint()
+    with pytest.raises(Exception):
+        assert new.ping() == 'pong'
+    assert 'new' not in ns.list()
+    # Check the agent process is really dead
+    assert agent_pid not in active_processes_pid_list()
+
+    # Test SIGINT on the quick `run_agent` function
+    a0 = run_agent('a0', nsaddr, base=NewAgent)
+    agent_pid = a0.get_pid()
+    assert agent_pid in active_processes_pid_list()
+    assert 'a0' in ns.list()
+    assert a0.ping() == 'pong'
+    a0.simulate_sigint()
+    # The second signal should raise an exception
+    with pytest.raises(Exception):
+        a0.simulate_sigint()
+    with pytest.raises(Exception):
+        assert a0.ping() == 'pong'
+    assert 'a0' not in ns.list()
+    # Check the agent process is really dead
+    assert agent_pid not in active_processes_pid_list()
+
+
+def test_sigint_nameserver():
+    """
+    Test SIGINT (simulation) signal on a NameServer agent.
+    """
+    class NewNameServer(NameServer):
+        def simulate_sigint(self):
+            os.kill(os.getpid(), signal.SIGINT)
+
+        def get_pid(self):
+            return os.getpid()
+
+    Pyro4.naming.NameServer = NewNameServer
+
+    ns = run_nameserver()
+    ns_addr = ns.addr()
+    ns_pid = ns.get_pid()
+    assert ns_pid in active_processes_pid_list()
+
+    # Create an agent
+    AgentProcess('new', nsaddr=ns_addr, base=Agent).start()
+    new = Proxy('new', ns_addr)
+    new.run()
+
+    ns.simulate_sigint()
+
+    # Give some time for the agents to shut down
+    time.sleep(2)
+
+    # Check agent is not alive
+    with pytest.raises(Exception):
+        assert new.ping() == 'pong'
+    # Check server is dead also
+    with pytest.raises(Exception):
+        assert ns.shutdown()
+    # Check the server process is really dead
+    assert ns_pid not in active_processes_pid_list()
 
 
 def test_agent_shutdown(nsaddr):
