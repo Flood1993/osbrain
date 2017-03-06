@@ -150,7 +150,6 @@ def test_sigint_ignore(nsaddr):
     Pyro4.naming.NameServer = NewNameServer
 
     ns = run_nameserver()
-    ns_addr = ns.addr()
 
     ns.simulate_sigint()
 
