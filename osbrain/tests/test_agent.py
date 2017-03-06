@@ -75,7 +75,7 @@ def test_ping(nsaddr):
     assert a0.ping() == 'pong'
 
 
-def test_SIGINT(nsaddr):
+def test_sigint(nsaddr):
     """
     Test SIGINT (simulation) signal on a non NameServer agent.
     """
@@ -106,7 +106,7 @@ def test_SIGINT(nsaddr):
     assert 'a0' not in ns.list()
 
 
-def test_SIGINT_nameserver():
+def test_sigint_nameserver():
     """
     Test SIGINT (simulation) signal on a NameServer agent.
     """
@@ -135,13 +135,13 @@ def test_SIGINT_nameserver():
         assert ns.shutdown()
 
 
-def test_SIGINT_ignore(nsaddr):
+def test_sigint_ignore(nsaddr):
     """
     Test a SIGINT signal doesn't shutdown our name server if we override
     the `sigint_handler` method.
     """
     class NewNameServer(NameServer):
-        def simulate_SIGINT(self):
+        def simulate_sigint(self):
             os.kill(os.getpid(), signal.SIGINT)
 
         def sigint_handler(self, signal, frame):
@@ -152,7 +152,7 @@ def test_SIGINT_ignore(nsaddr):
     ns = run_nameserver()
     ns_addr = ns.addr()
 
-    ns.simulate_SIGINT()
+    ns.simulate_sigint()
 
     time.sleep(2)
 
@@ -161,13 +161,13 @@ def test_SIGINT_ignore(nsaddr):
     ns.async_shutdown()
 
 
-def test_SIGINT_no_handling(nsaddr):
+def test_sigint_no_handling(nsaddr):
     """
     Test a SIGINT signal doesn't shutdown our name server if we override
     the `set_sigint_handler` method.
     """
     class NewNameServer(NameServer):
-        def simulate_SIGINT(self):
+        def simulate_sigint(self):
             os.kill(os.getpid(), signal.SIGINT)
 
         def set_sigint_handler(self):
@@ -179,7 +179,7 @@ def test_SIGINT_no_handling(nsaddr):
     ns_addr = ns.addr()
 
     with pytest.raises(Exception):
-        ns.simulate_SIGINT()
+        ns.simulate_sigint()
 
 
 def test_agent_shutdown(nsaddr):
