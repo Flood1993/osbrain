@@ -92,6 +92,7 @@ def test_sigint(nsaddr):
     assert 'new' in ns.list()
     assert new.ping() == 'pong'
     new.simulate_SIGINT()
+    time.sleep(2)
     with pytest.raises(Exception):
         assert new.ping() == 'pong'
     assert 'new' not in ns.list()
@@ -186,8 +187,8 @@ def test_sigint_no_handling(nsaddr):
     with pytest.raises(Exception):
         ns.simulate_sigint()
     # The following does not throw an exception. Should it throw it?
-    #with pytest.raises(Exception):
-    #    assert ns.ping() == 'pong'
+    # with pytest.raises(Exception):
+    #     assert ns.ping() == 'pong'
 
     # Check the agent is alive
     assert new.ping() == 'pong'

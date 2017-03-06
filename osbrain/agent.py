@@ -1038,7 +1038,7 @@ class AgentProcess(multiprocessing.Process):
         self.base = base
         self.shutdown_event = multiprocessing.Event()
         self.queue = multiprocessing.Queue()
-        self.sigint = False
+        self._sigint_count = 0
 
     def run(self):
         # Capture SIGINT
@@ -1072,7 +1072,7 @@ class AgentProcess(multiprocessing.Process):
             ns = NSProxy(self.nsaddr, timeout=1.)
             ns.remove(self.name)
         except PyroError:
-            if not self.sigint:
+            if self._sigint_count == 0:
                 sys.stderr.write(format_exception())
                 raise
         finally:
@@ -1096,8 +1096,11 @@ class AgentProcess(multiprocessing.Process):
         """
         Handle interruption signals.
         """
-        self.sigint = True
-        self.kill()
+        self._sigint_count += 1
+        if self._sigint_count == 1:
+            self.agent.shutdown()
+        else:
+            self.kill()
 
 
 def run_agent(name, nsaddr=None, addr=None, base=Agent, serializer=None):

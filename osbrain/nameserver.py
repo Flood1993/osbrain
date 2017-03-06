@@ -22,6 +22,7 @@ class NameServer(Pyro4.naming.NameServer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.shutdown_parent_daemon = False
+        self._sigint_count = 0
         self.set_sigint_handler()
 
     def set_sigint_handler(self):
@@ -66,7 +67,11 @@ class NameServer(Pyro4.naming.NameServer):
         self.shutdown_parent_daemon = True
 
     def sigint_handler(self, signal, frame):
-        self.async_shutdown()
+        self._sigint_count += 1
+        if self._sigint_count == 1:
+            self.async_shutdown()
+        else:
+            pass
 
 
 Pyro4.naming.NameServer = NameServer
