@@ -22,6 +22,7 @@ class NameServer(Pyro4.naming.NameServer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.shutdown_parent_daemon = False
+        signal.signal(signal.SIGINT, self.sigint_handler)
 
     def ping(self):
         """
@@ -56,6 +57,9 @@ class NameServer(Pyro4.naming.NameServer):
         self.async_shutdown_agents()
         self.shutdown_parent_daemon = True
 
+    def sigint_handler(self, signal, frame):
+        self.async_shutdown()
+
 
 Pyro4.naming.NameServer = NameServer
 
@@ -77,7 +81,6 @@ class NameServerProcess(multiprocessing.Process):
 
     def run(self):
         # Capture SIGINT
-        signal.signal(signal.SIGINT, self.sigint_handler)
 
         try:
             self.daemon = Pyro4.naming.NameServerDaemon(self.host, self.port)
@@ -148,12 +151,9 @@ class NameServerProcess(multiprocessing.Process):
         self.terminate()
         self.join()
 
-    def sigint_handler(self, signal, frame):
-        self.shutdown()
-
 
 def random_nameserver(host='127.0.0.1', port_start=10000, port_stop=20000,
-                      timeout=3., base=NameServerProcess):
+                      timeout=3.):
     """
     Start a random name server.
 
@@ -178,7 +178,7 @@ def random_nameserver(host='127.0.0.1', port_start=10000, port_stop=20000,
             # Bind to random port
             port = random.randrange(port_start, port_stop + 1)
             addr = SocketAddress(host, port)
-            nameserver = base(addr)
+            nameserver = NameServerProcess(addr)
             nameserver.start()
             return addr
         except RuntimeError as error:
@@ -187,7 +187,7 @@ def random_nameserver(host='127.0.0.1', port_start=10000, port_stop=20000,
             raise exception
 
 
-def run_nameserver(addr=None, base=NameServerProcess):
+def run_nameserver(addr=None):
     """
     Ease the name server creation process.
 
@@ -205,7 +205,7 @@ def run_nameserver(addr=None, base=NameServerProcess):
         A proxy to the name server.
     """
     if not addr:
-        addr = random_nameserver(base=base)
+        addr = random_nameserver()
     else:
-        base(addr).start()
+        NameServerProcess(addr).start()
     return NSProxy(addr)

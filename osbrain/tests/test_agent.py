@@ -9,6 +9,7 @@ from uuid import uuid4
 from threading import Timer
 
 import pytest
+import Pyro4
 
 from osbrain import run_logger
 from osbrain import run_agent
@@ -17,7 +18,7 @@ from osbrain import AgentAddress
 from osbrain import AgentProcess
 from osbrain import Proxy
 from osbrain import NSProxy
-from osbrain.nameserver import NameServerProcess
+from osbrain.nameserver import NameServer
 from osbrain.nameserver import run_nameserver
 from osbrain import SocketAddress
 
@@ -109,23 +110,30 @@ def test_SIGINT_nameserver():
     """
     Test SIGINT (simulation) signal on a NameServer agent.
     """
-    class NewNameServer(NameServerProcess):
+    class NewNameServer(NameServer):
         def simulate_SIGINT(self):
             os.kill(os.getpid(), signal.SIGINT)
 
-    ns = run_nameserver(base=NewNameServer)
+    Pyro4.naming.NameServer = NewNameServer
+
+    ns = run_nameserver()
 
     ns_addr = ns.addr()
-    ns_proxy = NSProxy(ns_addr)
 
-    '''# Create some agents
+    # Create an agent
     AgentProcess('new', nsaddr=ns_addr, base=Agent).start()
     new = Proxy('new', ns_addr)
-    new.run()'''
+    new.run()
 
-    ns_proxy.simulate_SIGINT()
+    ns.simulate_SIGINT()
 
-    ns.shutdown()
+    # Give some time for the agents to shut down
+    time.sleep(2)
+
+    with pytest.raises(Exception):
+        assert new.ping() == 'pong'
+    with pytest.raises(Exception):
+        assert ns.shutdown()
 
 
 def test_agent_shutdown(nsaddr):
