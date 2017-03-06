@@ -22,6 +22,14 @@ class NameServer(Pyro4.naming.NameServer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.shutdown_parent_daemon = False
+        self.set_SIGINT_handler()
+
+    def set_SIGINT_handler(self):
+        """
+        Set the handler for SIGINT signals.
+
+        It has its own method so as to favor inheritance (overriding).
+        """
         signal.signal(signal.SIGINT, self.sigint_handler)
 
     def ping(self):
