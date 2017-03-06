@@ -163,8 +163,8 @@ def test_sigint_ignore(nsaddr):
 
 def test_sigint_no_handling(nsaddr):
     """
-    Test a SIGINT signal doesn't shutdown our name server if we override
-    the `set_sigint_handler` method.
+    Test the behaviour of the system when NameServer does not handle SIGINT in
+    any way.
     """
     class NewNameServer(NameServer):
         def simulate_sigint(self):
@@ -178,8 +178,20 @@ def test_sigint_no_handling(nsaddr):
     ns = run_nameserver()
     ns_addr = ns.addr()
 
+    # Create an agent
+    AgentProcess('new', nsaddr=ns_addr, base=Agent).start()
+    new = Proxy('new', ns_addr)
+    new.run()
+
+    # Check the nameserver is dead
     with pytest.raises(Exception):
         ns.simulate_sigint()
+    # The following does not throw an exception. Should it throw it?
+    #with pytest.raises(Exception):
+    #    assert ns.ping() == 'pong'
+
+    # Check the agent is alive
+    assert new.ping() == 'pong'
 
 
 def test_agent_shutdown(nsaddr):
