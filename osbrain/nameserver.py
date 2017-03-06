@@ -153,7 +153,7 @@ class NameServerProcess(multiprocessing.Process):
 
 
 def random_nameserver(host='127.0.0.1', port_start=10000, port_stop=20000,
-                      timeout=3.):
+                      timeout=3., base=NameServerProcess):
     """
     Start a random name server.
 
@@ -178,7 +178,7 @@ def random_nameserver(host='127.0.0.1', port_start=10000, port_stop=20000,
             # Bind to random port
             port = random.randrange(port_start, port_stop + 1)
             addr = SocketAddress(host, port)
-            nameserver = NameServerProcess(addr)
+            nameserver = base(addr)
             nameserver.start()
             return addr
         except RuntimeError as error:
@@ -187,7 +187,7 @@ def random_nameserver(host='127.0.0.1', port_start=10000, port_stop=20000,
             raise exception
 
 
-def run_nameserver(addr=None):
+def run_nameserver(addr=None, base=NameServerProcess):
     """
     Ease the name server creation process.
 
@@ -205,7 +205,7 @@ def run_nameserver(addr=None):
         A proxy to the name server.
     """
     if not addr:
-        addr = random_nameserver()
+        addr = random_nameserver(base=base)
     else:
-        NameServerProcess(addr).start()
+        base(addr).start()
     return NSProxy(addr)
