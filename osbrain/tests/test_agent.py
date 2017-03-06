@@ -117,7 +117,6 @@ def test_SIGINT_nameserver():
     Pyro4.naming.NameServer = NewNameServer
 
     ns = run_nameserver()
-
     ns_addr = ns.addr()
 
     # Create an agent
@@ -134,6 +133,53 @@ def test_SIGINT_nameserver():
         assert new.ping() == 'pong'
     with pytest.raises(Exception):
         assert ns.shutdown()
+
+
+def test_SIGINT_ignore(nsaddr):
+    """
+    Test a SIGINT signal doesn't shutdown our name server if we override
+    the `sigint_handler` method.
+    """
+    class NewNameServer(NameServer):
+        def simulate_SIGINT(self):
+            os.kill(os.getpid(), signal.SIGINT)
+
+        def sigint_handler(self, signal, frame):
+            pass
+
+    Pyro4.naming.NameServer = NewNameServer
+
+    ns = run_nameserver()
+    ns_addr = ns.addr()
+
+    ns.simulate_SIGINT()
+
+    time.sleep(2)
+
+    assert ns.ping() == 'pong'
+
+    ns.async_shutdown()
+
+
+def test_SIGINT_no_handling(nsaddr):
+    """
+    Test a SIGINT signal doesn't shutdown our name server if we override
+    the `set_sigint_handler` method.
+    """
+    class NewNameServer(NameServer):
+        def simulate_SIGINT(self):
+            os.kill(os.getpid(), signal.SIGINT)
+
+        def set_sigint_handler(self):
+            pass
+
+    Pyro4.naming.NameServer = NewNameServer
+
+    ns = run_nameserver()
+    ns_addr = ns.addr()
+
+    with pytest.raises(Exception):
+        ns.simulate_SIGINT()
 
 
 def test_agent_shutdown(nsaddr):
