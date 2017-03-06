@@ -17,6 +17,7 @@ from osbrain import AgentAddress
 from osbrain import AgentProcess
 from osbrain import Proxy
 from osbrain import NSProxy
+from osbrain.nameserver import NameServerProcess
 from osbrain import SocketAddress
 
 from common import nsaddr  # pragma: no flakes
@@ -101,6 +102,53 @@ def test_SIGINT(nsaddr):
     with pytest.raises(Exception):
         assert a0.ping() == 'pong'
     assert 'a0' not in ns.list()
+
+
+def test_SIGINT_nameserver():
+    """
+    Test SIGINT (simulation) signal on a NameServer agent.
+    """
+    class NewNameServer(NameServerProcess):
+        def simulate_SIGINT(self):
+            os.kill(os.getpid(), signal.SIGINT)
+
+    def custom_random_nameserver(host='127.0.0.1', port_start=10000,
+                                 port_stop=20000, timeout=3.):
+        t0 = time.time()
+        exception = TimeoutError('Name server starting timed out!')
+        while True:
+            try:
+                # Bind to random port
+                port = random.randrange(port_start, port_stop + 1)
+                addr = SocketAddress(host, port)
+                nameserver = NewNameServer(addr)
+                nameserver.start()
+                return addr
+            except RuntimeError as error:
+                exception = error
+            if time.time() - t0 > timeout:
+                raise exception
+
+    def custom_run_nameserver(addr=None):
+        if not addr:
+            addr = custom_random_nameserver()
+        else:
+            NewNameServer(addr).start()
+        return NSProxy(addr)
+
+    ns = custom_run_nameserver()
+
+    ns_addr = ns.addr()
+    ns_proxy = NSProxy(ns_addr)
+
+    '''# Create some agents
+    AgentProcess('new', nsaddr=ns_addr, base=Agent).start()
+    new = Proxy('new', ns_addr)
+    new.run()'''
+
+    ns_proxy.simulate_SIGINT()
+
+    ns.shutdown()
 
 
 def test_agent_shutdown(nsaddr):
