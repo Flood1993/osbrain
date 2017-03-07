@@ -23,7 +23,7 @@ class NameServer(Pyro4.naming.NameServer):
         super().__init__(*args, **kwargs)
         self.shutdown_parent_daemon = False
         self._sigint_count = 0
-        signal.signal(signal.SIGINT, self.sigint_handler)
+        signal.signal(signal.SIGINT, self._sigint_handler)
 
     def ping(self):
         """
@@ -58,7 +58,7 @@ class NameServer(Pyro4.naming.NameServer):
         self.async_shutdown_agents()
         self.shutdown_parent_daemon = True
 
-    def sigint_handler(self, signal, frame):
+    def _sigint_handler(self, signal, frame):
         self._sigint_count += 1
         if self._sigint_count == 1:
             self.async_shutdown()

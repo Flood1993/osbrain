@@ -1042,7 +1042,7 @@ class AgentProcess(multiprocessing.Process):
 
     def run(self):
         # Capture SIGINT
-        signal.signal(signal.SIGINT, self.sigint_handler)
+        signal.signal(signal.SIGINT, self._sigint_handler)
 
         try:
             ns = NSProxy(self.nsaddr)
@@ -1092,7 +1092,7 @@ class AgentProcess(multiprocessing.Process):
         if self.daemon:
             self.daemon.shutdown()
 
-    def sigint_handler(self, signal, frame):
+    def _sigint_handler(self, signal, frame):
         """
         Handle interruption signals.
         """
