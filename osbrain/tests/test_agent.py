@@ -95,7 +95,9 @@ def test_sigint_agent_shutdown(nsaddr):
     assert 'new' in ns.list()
     assert new.ping() == 'pong'
     new.simulate_SIGINT()
-    time.sleep(2)
+    time0 = time.time()
+    while time.time() - time0 < 5 and 'new' in ns.list():
+        time.sleep(0.2)
     with pytest.raises(Exception):
         assert new.ping() == 'pong'
     assert 'new' not in ns.list()
@@ -105,7 +107,9 @@ def test_sigint_agent_shutdown(nsaddr):
     assert 'a0' in ns.list()
     assert a0.ping() == 'pong'
     a0.simulate_SIGINT()
-    time.sleep(2)
+    time0 = time.time()
+    while time.time() - time0 < 5 and 'a0' in ns.list():
+        time.sleep(0.2)
     with pytest.raises(Exception):
         assert a0.ping() == 'pong'
     assert 'a0' not in ns.list()
