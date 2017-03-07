@@ -162,39 +162,6 @@ def test_sigint_ignore(nsaddr):
     ns.async_shutdown()
 
 
-def test_sigint_no_handling(nsaddr):
-    """
-    Test the behaviour of the system when NameServer does not handle SIGINT in
-    any way.
-    """
-    class NewNameServer(NameServer):
-        def simulate_sigint(self):
-            os.kill(os.getpid(), signal.SIGINT)
-
-        def set_sigint_handler(self):
-            pass
-
-    Pyro4.naming.NameServer = NewNameServer
-
-    ns = run_nameserver()
-    ns_addr = ns.addr()
-
-    # Create an agent
-    AgentProcess('new', nsaddr=ns_addr, base=Agent).start()
-    new = Proxy('new', ns_addr)
-    new.run()
-
-    # Check the nameserver is dead
-    with pytest.raises(Exception):
-        ns.simulate_sigint()
-    # The following does not throw an exception. Should it throw it?
-    # with pytest.raises(Exception):
-    #     assert ns.ping() == 'pong'
-
-    # Check the agent is alive
-    assert new.ping() == 'pong'
-
-
 def test_agent_shutdown(nsaddr):
     """
     An agent must unregister itself before shutting down.
