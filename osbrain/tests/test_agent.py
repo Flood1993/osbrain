@@ -83,7 +83,7 @@ def test_sigint_agent_shutdown(nsaddr):
     Two seconds are given to give enough time to free the resources.
     """
     class NewAgent(Agent):
-        def simulate_SIGINT(self):
+        def simulate_sigint(self):
             os.kill(os.getpid(), signal.SIGINT)
 
     ns = NSProxy(nsaddr)
@@ -94,7 +94,7 @@ def test_sigint_agent_shutdown(nsaddr):
     new.run()
     assert 'new' in ns.list()
     assert new.ping() == 'pong'
-    new.simulate_SIGINT()
+    new.simulate_sigint()
     time0 = time.time()
     while time.time() - time0 < 5 and 'new' in ns.list():
         time.sleep(0.2)
@@ -106,7 +106,7 @@ def test_sigint_agent_shutdown(nsaddr):
     a0 = run_agent('a0', nsaddr, base=NewAgent)
     assert 'a0' in ns.list()
     assert a0.ping() == 'pong'
-    a0.simulate_SIGINT()
+    a0.simulate_sigint()
     time0 = time.time()
     while time.time() - time0 < 5 and 'a0' in ns.list():
         time.sleep(0.2)
@@ -123,7 +123,7 @@ def test_sigint_agent_kill(nsaddr):
     No time is given to free the resources.
     """
     class NewAgent(Agent):
-        def simulate_SIGINT(self):
+        def simulate_sigint(self):
             os.kill(os.getpid(), signal.SIGINT)
 
     ns = NSProxy(nsaddr)
@@ -134,8 +134,8 @@ def test_sigint_agent_kill(nsaddr):
     new.run()
     assert 'new' in ns.list()
     assert new.ping() == 'pong'
-    new.simulate_SIGINT()
-    new.simulate_SIGINT()
+    new.simulate_sigint()
+    new.simulate_sigint()
     with pytest.raises(Exception):
         assert new.ping() == 'pong'
     assert 'new' not in ns.list()
@@ -144,8 +144,8 @@ def test_sigint_agent_kill(nsaddr):
     a0 = run_agent('a0', nsaddr, base=NewAgent)
     assert 'a0' in ns.list()
     assert a0.ping() == 'pong'
-    a0.simulate_SIGINT()
-    a0.simulate_SIGINT()
+    a0.simulate_sigint()
+    a0.simulate_sigint()
     with pytest.raises(Exception):
         assert a0.ping() == 'pong'
     assert 'a0' not in ns.list()
@@ -156,7 +156,7 @@ def test_sigint_nameserver():
     Test SIGINT (simulation) signal on a NameServer agent.
     """
     class NewNameServer(NameServer):
-        def simulate_SIGINT(self):
+        def simulate_sigint(self):
             os.kill(os.getpid(), signal.SIGINT)
 
     Pyro4.naming.NameServer = NewNameServer
@@ -169,7 +169,7 @@ def test_sigint_nameserver():
     new = Proxy('new', ns_addr)
     new.run()
 
-    ns.simulate_SIGINT()
+    ns.simulate_sigint()
 
     # Give some time for the agents to shut down
     time.sleep(2)
