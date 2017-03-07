@@ -97,7 +97,7 @@ def test_sigint_agent_shutdown(nsaddr):
     new = Proxy('new', nsaddr)
     new.run()
     agent_pid = new.get_pid()
-    assert agent_pid in psutil.pids()
+    assert psutil.Process(agent_pid).status() != 'zombie'
     assert 'new' in ns.list()
     assert new.ping() == 'pong'
     new.simulate_sigint()
@@ -107,12 +107,12 @@ def test_sigint_agent_shutdown(nsaddr):
     with pytest.raises(Exception):
         assert new.ping() == 'pong'
     assert 'new' not in ns.list()
-    assert agent_pid not in psutil.pids()
+    assert psutil.Process(agent_pid).status() == 'zombie'
 
     # Test SIGINT on the quick `run_agent` function
     a0 = run_agent('a0', nsaddr, base=NewAgent)
     agent_pid = a0.get_pid()
-    assert agent_pid in psutil.pids()
+    assert psutil.Process(agent_pid).status() != 'zombie'
     assert 'a0' in ns.list()
     assert a0.ping() == 'pong'
     a0.simulate_sigint()
@@ -122,7 +122,7 @@ def test_sigint_agent_shutdown(nsaddr):
     with pytest.raises(Exception):
         assert a0.ping() == 'pong'
     assert 'a0' not in ns.list()
-    assert agent_pid not in psutil.pids()
+    assert psutil.Process(agent_pid).status() == 'zombie'
 
 
 def test_sigint_agent_kill(nsaddr):
@@ -146,7 +146,7 @@ def test_sigint_agent_kill(nsaddr):
     new = Proxy('new', nsaddr)
     new.run()
     agent_pid = new.get_pid()
-    assert agent_pid in psutil.pids()
+    assert psutil.Process(agent_pid).status() != 'zombie'
     assert 'new' in ns.list()
     assert new.ping() == 'pong'
     new.simulate_sigint()
@@ -157,12 +157,12 @@ def test_sigint_agent_kill(nsaddr):
         assert new.ping() == 'pong'
     assert 'new' not in ns.list()
     # Check the agent process is really dead
-    assert agent_pid not in psutil.pids()
+    assert psutil.Process(agent_pid).status() == 'zombie'
 
     # Test SIGINT on the quick `run_agent` function
     a0 = run_agent('a0', nsaddr, base=NewAgent)
     agent_pid = a0.get_pid()
-    assert agent_pid in psutil.pids()
+    assert psutil.Process(agent_pid).status() != 'zombie'
     assert 'a0' in ns.list()
     assert a0.ping() == 'pong'
     a0.simulate_sigint()
@@ -173,7 +173,7 @@ def test_sigint_agent_kill(nsaddr):
         assert a0.ping() == 'pong'
     assert 'a0' not in ns.list()
     # Check the agent process is really dead
-    assert agent_pid not in psutil.pids()
+    assert psutil.Process(agent_pid).status() == 'zombie'
 
 
 def test_sigint_nameserver():
@@ -192,7 +192,7 @@ def test_sigint_nameserver():
     ns = run_nameserver()
     ns_addr = ns.addr()
     ns_pid = ns.get_pid()
-    assert ns_pid in psutil.pids()
+    assert psutil.Process(ns_pid).status() != 'zombie'
 
     # Create an agent
     AgentProcess('new', nsaddr=ns_addr, base=Agent).start()
@@ -211,7 +211,7 @@ def test_sigint_nameserver():
     with pytest.raises(Exception):
         assert ns.shutdown()
     # Check the server process is really dead
-    assert ns_pid not in psutil.pids()
+    assert psutil.Process(ns_pid).status() == 'zombie'
 
 
 def test_agent_shutdown(nsaddr):
