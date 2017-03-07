@@ -22,7 +22,6 @@ class NameServer(Pyro4.naming.NameServer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.shutdown_parent_daemon = False
-        self._sigint_count = 0
         signal.signal(signal.SIGINT, self._sigint_handler)
 
     def ping(self):
@@ -58,12 +57,16 @@ class NameServer(Pyro4.naming.NameServer):
         self.async_shutdown_agents()
         self.shutdown_parent_daemon = True
 
-    def _sigint_handler(self, signal, frame):
-        self._sigint_count += 1
-        if self._sigint_count == 1:
-            self.async_shutdown()
-        else:
-            pass
+    def _sigint_handler(self, _signal, _frame):
+        """
+        Handle the first SIGINT signal.
+
+        The nameserver will try to end gracefully for the first SIGINT. For
+        successive signals, this handler will be deactivated.
+        """
+        self.async_shutdown()
+        # Restore default Python SIGINT handler (KeyboardInterrupt)
+        signal.signal(signal.SIGINT, signal.default_int_handler)
 
 
 Pyro4.naming.NameServer = NameServer
