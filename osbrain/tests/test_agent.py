@@ -135,7 +135,9 @@ def test_sigint_agent_kill(nsaddr):
     assert 'new' in ns.list()
     assert new.ping() == 'pong'
     new.simulate_sigint()
-    new.simulate_sigint()
+    # The second signal should raise an exception
+    with pytest.raises(Exception):
+        new.simulate_sigint()
     with pytest.raises(Exception):
         assert new.ping() == 'pong'
     assert 'new' not in ns.list()
@@ -145,7 +147,9 @@ def test_sigint_agent_kill(nsaddr):
     assert 'a0' in ns.list()
     assert a0.ping() == 'pong'
     a0.simulate_sigint()
-    a0.simulate_sigint()
+    # The second signal should raise an exception
+    with pytest.raises(Exception):
+        a0.simulate_sigint()
     with pytest.raises(Exception):
         assert a0.ping() == 'pong'
     assert 'a0' not in ns.list()
@@ -174,8 +178,10 @@ def test_sigint_nameserver():
     # Give some time for the agents to shut down
     time.sleep(2)
 
+    # Check agent is not alive
     with pytest.raises(Exception):
         assert new.ping() == 'pong'
+    # Check server is dead also
     with pytest.raises(Exception):
         assert ns.shutdown()
 
