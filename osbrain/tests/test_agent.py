@@ -75,9 +75,12 @@ def test_ping(nsaddr):
     assert a0.ping() == 'pong'
 
 
-def test_sigint(nsaddr):
+def test_sigint_agent_shutdown(nsaddr):
     """
     Test SIGINT (simulation) signal on a non NameServer agent.
+
+    A single signal is sent: we want the agent to shut down gracefully.
+    Two seconds are given to give enough time to free the resources.
     """
     class NewAgent(Agent):
         def simulate_SIGINT(self):
@@ -103,6 +106,42 @@ def test_sigint(nsaddr):
     assert a0.ping() == 'pong'
     a0.simulate_SIGINT()
     time.sleep(2)
+    with pytest.raises(Exception):
+        assert a0.ping() == 'pong'
+    assert 'a0' not in ns.list()
+
+
+def test_sigint_agent_kill(nsaddr):
+    """
+    Test SIGINT (simulation) signal on a non NameServer agent.
+
+    Two signals are sent: we want the agent to shut down immediately.
+    No time is given to free the resources.
+    """
+    class NewAgent(Agent):
+        def simulate_SIGINT(self):
+            os.kill(os.getpid(), signal.SIGINT)
+
+    ns = NSProxy(nsaddr)
+
+    # Test SIGINT on an Agent based on the new class
+    AgentProcess('new', nsaddr=nsaddr, base=NewAgent).start()
+    new = Proxy('new', nsaddr)
+    new.run()
+    assert 'new' in ns.list()
+    assert new.ping() == 'pong'
+    new.simulate_SIGINT()
+    new.simulate_SIGINT()
+    with pytest.raises(Exception):
+        assert new.ping() == 'pong'
+    assert 'new' not in ns.list()
+
+    # Test SIGINT on the quick `run_agent` function
+    a0 = run_agent('a0', nsaddr, base=NewAgent)
+    assert 'a0' in ns.list()
+    assert a0.ping() == 'pong'
+    a0.simulate_SIGINT()
+    a0.simulate_SIGINT()
     with pytest.raises(Exception):
         assert a0.ping() == 'pong'
     assert 'a0' not in ns.list()
