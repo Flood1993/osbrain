@@ -102,6 +102,7 @@ def test_sigint(nsaddr):
     assert 'a0' in ns.list()
     assert a0.ping() == 'pong'
     a0.simulate_SIGINT()
+    time.sleep(2)
     with pytest.raises(Exception):
         assert a0.ping() == 'pong'
     assert 'a0' not in ns.list()
