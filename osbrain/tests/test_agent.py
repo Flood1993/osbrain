@@ -10,6 +10,7 @@ from threading import Timer
 
 import pytest
 import Pyro4
+import psutil
 
 from osbrain import run_logger
 from osbrain import run_agent
@@ -26,18 +27,6 @@ from common import nsaddr  # pragma: no flakes
 from common import nsproxy  # pragma: no flakes
 from common import logger_received
 from common import sync_agent_logger
-
-
-def active_processes_pid_list():
-    """
-    Return a list containing the PID's of active processes in the system.
-
-    Returns
-    -------
-    list (int)
-        List containing the PIDs as integers.
-    """
-    return [int(pid) for pid in os.listdir('/proc') if pid.isdigit()]
 
 
 def set_received(agent, message, topic=None):
@@ -108,9 +97,9 @@ def test_sigint_agent_shutdown(nsaddr):
     new = Proxy('new', nsaddr)
     new.run()
     agent_pid = new.get_pid()
+    assert agent_pid in psutil.pids()
     assert 'new' in ns.list()
     assert new.ping() == 'pong'
-    assert agent_pid in active_processes_pid_list()
     new.simulate_sigint()
     time0 = time.time()
     while time.time() - time0 < 5 and 'new' in ns.list():
@@ -118,12 +107,12 @@ def test_sigint_agent_shutdown(nsaddr):
     with pytest.raises(Exception):
         assert new.ping() == 'pong'
     assert 'new' not in ns.list()
-    assert agent_pid not in active_processes_pid_list()
+    assert agent_pid not in psutil.pids()
 
     # Test SIGINT on the quick `run_agent` function
     a0 = run_agent('a0', nsaddr, base=NewAgent)
     agent_pid = a0.get_pid()
-    assert agent_pid in active_processes_pid_list()
+    assert agent_pid in psutil.pids()
     assert 'a0' in ns.list()
     assert a0.ping() == 'pong'
     a0.simulate_sigint()
@@ -133,7 +122,7 @@ def test_sigint_agent_shutdown(nsaddr):
     with pytest.raises(Exception):
         assert a0.ping() == 'pong'
     assert 'a0' not in ns.list()
-    assert agent_pid not in active_processes_pid_list()
+    assert agent_pid not in psutil.pids()
 
 
 def test_sigint_agent_kill(nsaddr):
@@ -157,7 +146,7 @@ def test_sigint_agent_kill(nsaddr):
     new = Proxy('new', nsaddr)
     new.run()
     agent_pid = new.get_pid()
-    assert agent_pid in active_processes_pid_list()
+    assert agent_pid in psutil.pids()
     assert 'new' in ns.list()
     assert new.ping() == 'pong'
     new.simulate_sigint()
@@ -168,12 +157,12 @@ def test_sigint_agent_kill(nsaddr):
         assert new.ping() == 'pong'
     assert 'new' not in ns.list()
     # Check the agent process is really dead
-    assert agent_pid not in active_processes_pid_list()
+    assert agent_pid not in psutil.pids()
 
     # Test SIGINT on the quick `run_agent` function
     a0 = run_agent('a0', nsaddr, base=NewAgent)
     agent_pid = a0.get_pid()
-    assert agent_pid in active_processes_pid_list()
+    assert agent_pid in psutil.pids()
     assert 'a0' in ns.list()
     assert a0.ping() == 'pong'
     a0.simulate_sigint()
@@ -184,7 +173,7 @@ def test_sigint_agent_kill(nsaddr):
         assert a0.ping() == 'pong'
     assert 'a0' not in ns.list()
     # Check the agent process is really dead
-    assert agent_pid not in active_processes_pid_list()
+    assert agent_pid not in psutil.pids()
 
 
 def test_sigint_nameserver():
@@ -203,7 +192,7 @@ def test_sigint_nameserver():
     ns = run_nameserver()
     ns_addr = ns.addr()
     ns_pid = ns.get_pid()
-    assert ns_pid in active_processes_pid_list()
+    assert ns_pid in psutil.pids()
 
     # Create an agent
     AgentProcess('new', nsaddr=ns_addr, base=Agent).start()
@@ -222,7 +211,7 @@ def test_sigint_nameserver():
     with pytest.raises(Exception):
         assert ns.shutdown()
     # Check the server process is really dead
-    assert ns_pid not in active_processes_pid_list()
+    assert ns_pid not in psutil.pids()
 
 
 def test_agent_shutdown(nsaddr):
