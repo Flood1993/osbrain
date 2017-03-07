@@ -137,31 +137,6 @@ def test_sigint_nameserver():
         assert ns.shutdown()
 
 
-def test_sigint_ignore(nsaddr):
-    """
-    Test a SIGINT signal doesn't shutdown our name server if we override
-    the `sigint_handler` method.
-    """
-    class NewNameServer(NameServer):
-        def simulate_sigint(self):
-            os.kill(os.getpid(), signal.SIGINT)
-
-        def sigint_handler(self, signal, frame):
-            pass
-
-    Pyro4.naming.NameServer = NewNameServer
-
-    ns = run_nameserver()
-
-    ns.simulate_sigint()
-
-    time.sleep(2)
-
-    assert ns.ping() == 'pong'
-
-    ns.async_shutdown()
-
-
 def test_agent_shutdown(nsaddr):
     """
     An agent must unregister itself before shutting down.
