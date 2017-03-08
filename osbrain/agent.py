@@ -1099,6 +1099,16 @@ class AgentProcess(multiprocessing.Process):
         self.sigint = True
         self.kill()
 
+    def __enter__(self):
+        self.start()
+        proxy = Proxy(self.name, self.nsaddr)
+        proxy.run()
+        return proxy
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.kill()
+        self.join()
+
 
 def run_agent(name, nsaddr=None, addr=None, base=Agent, serializer=None):
     """

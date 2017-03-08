@@ -71,6 +71,18 @@ def test_ping(nsaddr):
     assert a0.ping() == 'pong'
 
 
+def test_context_manager(nsaddr):
+    with AgentProcess('a0', nsaddr) as ap:
+        assert ap.ping() == 'pong'
+
+    class NewAgent(Agent):
+        def f(self):
+            return 123
+
+    with AgentProcess('a0', nsaddr, base=NewAgent) as ap:
+        assert ap.f() == 123
+
+
 def test_agent_shutdown(nsaddr):
     """
     An agent must unregister itself before shutting down.
