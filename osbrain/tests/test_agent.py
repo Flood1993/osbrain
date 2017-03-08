@@ -198,7 +198,6 @@ def test_sigint_nameserver():
     ns = run_nameserver()
     ns_addr = ns.addr()
     ns_pid = ns.get_pid()
-    time.sleep(5)
     assert ns_pid in active_processes_pid_list()
 
     # Create an agent
