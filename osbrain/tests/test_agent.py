@@ -31,8 +31,13 @@ from common import sync_agent_logger
 def active_processes_pid_list():
     """
     Return a list containing the PID's of active processes in the system.
+
+    Returns
+    -------
+    list (int)
+        List containing the PIDs as integers.
     """
-    return [pid for pid in os.listdir('/proc') if pid.isdigit()]
+    return [int(pid) for pid in os.listdir('/proc') if pid.isdigit()]
 
 
 def set_received(agent, message, topic=None):
@@ -103,9 +108,9 @@ def test_sigint_agent_shutdown(nsaddr):
     new = Proxy('new', nsaddr)
     new.run()
     agent_pid = new.get_pid()
-    assert agent_pid in active_processes_pid_list()
     assert 'new' in ns.list()
     assert new.ping() == 'pong'
+    assert agent_pid in active_processes_pid_list()
     new.simulate_sigint()
     time0 = time.time()
     while time.time() - time0 < 5 and 'new' in ns.list():
