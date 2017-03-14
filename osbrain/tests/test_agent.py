@@ -118,6 +118,7 @@ def test_sigint_agent_shutdown(nsaddr):
     with pytest.raises(Exception):
         assert new.ping() == 'pong'
     assert 'new' not in ns.list()
+    os.waitpid(agent_pid, 0)
     assert agent_pid not in active_processes_pid_list()
 
     # Test SIGINT on the quick `run_agent` function
@@ -133,6 +134,7 @@ def test_sigint_agent_shutdown(nsaddr):
     with pytest.raises(Exception):
         assert a0.ping() == 'pong'
     assert 'a0' not in ns.list()
+    os.waitpid(agent_pid, 0)
     assert agent_pid not in active_processes_pid_list()
 
 
