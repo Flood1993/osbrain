@@ -40,6 +40,18 @@ def active_processes_pid_list():
     return [int(pid) for pid in os.listdir('/proc') if pid.isdigit()]
 
 
+def process_entry_exists(pid):
+    """
+    Return whether a process has an entry in the process table or not.
+    """
+    time.sleep(0.1)
+    return pid in active_processes_pid_list()
+
+
+def sigchld_handler(_signal, _frame):
+    os.wait()
+
+
 def set_received(agent, message, topic=None):
     agent.received = message
 
@@ -94,6 +106,8 @@ def test_sigint_agent_shutdown(nsaddr):
     A single signal is sent: we want the agent to shut down gracefully.
     Two seconds are given to give enough time to free the resources.
     """
+    signal.signal(signal.SIGCHLD, sigchld_handler)
+
     class NewAgent(Agent):
         def simulate_sigint(self):
             os.kill(os.getpid(), signal.SIGINT)
@@ -110,7 +124,7 @@ def test_sigint_agent_shutdown(nsaddr):
     agent_pid = new.get_pid()
     assert 'new' in ns.list()
     assert new.ping() == 'pong'
-    assert agent_pid in active_processes_pid_list()
+    assert process_entry_exists(agent_pid)
     new.simulate_sigint()
     time0 = time.time()
     while time.time() - time0 < 5 and 'new' in ns.list():
@@ -118,12 +132,12 @@ def test_sigint_agent_shutdown(nsaddr):
     with pytest.raises(Exception):
         assert new.ping() == 'pong'
     assert 'new' not in ns.list()
-    assert agent_pid not in active_processes_pid_list()
+    assert not process_entry_exists(agent_pid)
 
     # Test SIGINT on the quick `run_agent` function
     a0 = run_agent('a0', nsaddr, base=NewAgent)
     agent_pid = a0.get_pid()
-    assert agent_pid in active_processes_pid_list()
+    assert process_entry_exists(agent_pid)
     assert 'a0' in ns.list()
     assert a0.ping() == 'pong'
     a0.simulate_sigint()
@@ -133,7 +147,7 @@ def test_sigint_agent_shutdown(nsaddr):
     with pytest.raises(Exception):
         assert a0.ping() == 'pong'
     assert 'a0' not in ns.list()
-    assert agent_pid not in active_processes_pid_list()
+    assert not process_entry_exists(agent_pid)
 
 
 def test_sigint_agent_kill(nsaddr):
@@ -143,6 +157,8 @@ def test_sigint_agent_kill(nsaddr):
     Two signals are sent: we want the agent to shut down immediately.
     No time is given to free the resources.
     """
+    signal.signal(signal.SIGCHLD, sigchld_handler)
+
     class NewAgent(Agent):
         def simulate_sigint(self):
             os.kill(os.getpid(), signal.SIGINT)
@@ -157,7 +173,7 @@ def test_sigint_agent_kill(nsaddr):
     new = Proxy('new', nsaddr)
     new.run()
     agent_pid = new.get_pid()
-    assert agent_pid in active_processes_pid_list()
+    assert process_entry_exists(agent_pid)
     assert 'new' in ns.list()
     assert new.ping() == 'pong'
     new.simulate_sigint()
@@ -168,12 +184,12 @@ def test_sigint_agent_kill(nsaddr):
         assert new.ping() == 'pong'
     assert 'new' not in ns.list()
     # Check the agent process is really dead
-    assert agent_pid not in active_processes_pid_list()
+    assert not process_entry_exists(agent_pid)
 
     # Test SIGINT on the quick `run_agent` function
     a0 = run_agent('a0', nsaddr, base=NewAgent)
     agent_pid = a0.get_pid()
-    assert agent_pid in active_processes_pid_list()
+    assert process_entry_exists(agent_pid)
     assert 'a0' in ns.list()
     assert a0.ping() == 'pong'
     a0.simulate_sigint()
@@ -184,13 +200,15 @@ def test_sigint_agent_kill(nsaddr):
         assert a0.ping() == 'pong'
     assert 'a0' not in ns.list()
     # Check the agent process is really dead
-    assert agent_pid not in active_processes_pid_list()
+    assert not process_entry_exists(agent_pid)
 
 
 def test_sigint_nameserver():
     """
     Test SIGINT (simulation) signal on a NameServer agent.
     """
+    signal.signal(signal.SIGCHLD, sigchld_handler)
+
     class NewNameServer(NameServer):
         def simulate_sigint(self):
             os.kill(os.getpid(), signal.SIGINT)
@@ -203,7 +221,7 @@ def test_sigint_nameserver():
     ns = run_nameserver()
     ns_addr = ns.addr()
     ns_pid = ns.get_pid()
-    assert ns_pid in active_processes_pid_list()
+    assert process_entry_exists(ns_pid)
 
     # Create an agent
     AgentProcess('new', nsaddr=ns_addr, base=Agent).start()
@@ -222,7 +240,7 @@ def test_sigint_nameserver():
     with pytest.raises(Exception):
         assert ns.shutdown()
     # Check the server process is really dead
-    assert ns_pid not in active_processes_pid_list()
+    assert not process_entry_exists(ns_pid)
 
 
 def test_agent_shutdown(nsaddr):
