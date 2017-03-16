@@ -31,11 +31,14 @@ def locate_ns(nsaddr, timeout=3.):
     NamingError
         If the name server could not be located.
     """
+    print('Locating NS\n')
     host, port = address_to_host_port(nsaddr)
     time0 = time.time()
     while True:
         try:
+            print('Calling Pyro 4 locateNS\n')
             Pyro4.locateNS(host, port)
+            print('Pyro 4 locateNS call finished OK\n')
             return nsaddr
         except NamingError:
             if time.time() - time0 < timeout:
@@ -244,12 +247,17 @@ class NSProxy(Pyro4.core.Proxy):
         Timeout, in seconds, to wait until the name server is discovered.
     """
     def __init__(self, nsaddr=None, timeout=3):
+        print('NSProxy 1\n')
         if not nsaddr:
             nsaddr = os.environ.get('OSBRAIN_NAMESERVER_ADDRESS')
+        print('NSProxy 2\n')
         nshost, nsport = address_to_host_port(nsaddr)
+        print('NSProxy 3\n')
         # Make sure name server exists
         locate_ns(nsaddr, timeout)
+        print('NSProxy 4\n')
         ns_name = Pyro4.constants.NAMESERVER_NAME
+        print('NSProxy 5\n')
         super().__init__('PYRONAME:%s@%s:%d' % (ns_name, nshost, nsport))
 
     def release(self):

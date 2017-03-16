@@ -1315,9 +1315,12 @@ class AgentProcess(multiprocessing.Process):
         """
         Handle interruption signals.
         """
+        print('> SIGINT Agent enter')
         signal.signal(signal.SIGINT, signal.default_int_handler)
         self.sigint = True
-        self.kill()
+        self.agent.shutdown()
+        # self.kill()
+        print('> SIGINT Agent exit')
 
 
 def run_agent(name, nsaddr=None, addr=None, base=Agent, serializer=None,
