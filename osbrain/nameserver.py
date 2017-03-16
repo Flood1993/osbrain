@@ -5,6 +5,7 @@ import os
 import time
 import random
 import multiprocessing
+import signal
 
 import Pyro4
 from Pyro4.naming import BroadcastServer
@@ -74,7 +75,7 @@ class NameServerProcess(multiprocessing.Process):
         self.queue = multiprocessing.Queue()
 
     def run(self):
-        # Capture SIGINT
+        signal.signal(signal.SIGINT, self._sigint_handler)
 
         try:
             self.daemon = Pyro4.naming.NameServerDaemon(self.host, self.port)
@@ -141,6 +142,10 @@ class NameServerProcess(multiprocessing.Process):
         self.shutdown_event.set()
         self.terminate()
         self.join()
+
+    def _sigint_handler(self, _signal, _frame):
+        signal.signal(signal.SIGINT, signal.default_int_handler)
+        self.shutdown()
 
 
 def random_nameserver_process(host='127.0.0.1', port_start=10000,
