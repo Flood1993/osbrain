@@ -11,6 +11,7 @@ import Pyro4
 import osbrain
 from osbrain import run_logger
 from osbrain import run_agent
+from osbrain import run_nameserver
 from osbrain import Agent
 from osbrain import AgentAddress
 from osbrain import AgentProcess
@@ -503,6 +504,38 @@ def test_agent_error_permission_denied(nsproxy):
         run_agent('a0', nsaddr=nsproxy.addr(), addr='127.0.0.1:22')
     assert 'PermissionError' in str(error.value)
     assert 'Permission denied' in str(error.value)
+
+
+def test_hwm(nsproxy):
+    os.environ['OSBRAIN_DEFAULT_HWM'] = '10'
+    addr = AgentAddress(transport='tcp', address='127.0.0.1:15151',
+                        kind='PULL', role='server', serializer='pickle')
+    a0 = run_agent('a0')
+    a0.connect(addr, 'push')
+
+    for i in range(5):
+        a0.send('push', 'Hello world!')
+
+
+def test_hwm_agent_blocked():
+    ns = run_nameserver()
+    os.environ['OSBRAIN_DEFAULT_HWM'] = '10'
+    addr = AgentAddress(transport='tcp', address='127.0.0.1:15151',
+                        kind='PULL', role='server', serializer='pickle')
+    a0 = run_agent('a0')
+    a0.connect(addr, 'push')
+
+    for i in range(15):
+        a0.unsafe.after(0, 'send', 'push', 'Hello world!')
+
+    with pytest.raises(TimeoutError):
+        ns.shutdown()
+
+    a1 = run_agent('a1')
+    a1.bind('PULL', addr=addr.address, transport='tcp', handler=set_received)
+
+    time.sleep(2)
+    ns.shutdown()
 
 
 def test_agent_loopback_header_unknown(nsproxy):

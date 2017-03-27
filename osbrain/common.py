@@ -142,3 +142,15 @@ def get_linger():
     if value < 0:
         return -1
     return int(float(value) * 1000)
+
+
+def get_hwm():
+    """
+    Wrapper to get the hwm option from the environment variable.
+
+    Returns
+    -------
+    int
+        Size of the hwm queues.
+    """
+    return int(os.getenv('OSBRAIN_DEFAULT_HWM'))

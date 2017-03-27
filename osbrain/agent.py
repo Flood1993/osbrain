@@ -27,6 +27,7 @@ from .common import LogLevel
 from .common import repeat
 from .common import after
 from .common import get_linger
+from .common import get_hwm
 from .address import AgentAddress
 from .address import AgentAddressKind
 from .address import AgentChannel
@@ -723,6 +724,8 @@ class Agent():
         addr : str
             The address where the socket binded to.
         """
+        socket.setsockopt(zmq.RCVHWM, get_hwm())
+        socket.setsockopt(zmq.SNDHWM, get_hwm())
         if transport == 'tcp':
             if not addr:
                 uri = 'tcp://%s' % self.host
@@ -894,6 +897,8 @@ class Agent():
         if not register_as:
             register_as = client_address
         socket = self.context.socket(client_address.kind.zmq())
+        socket.setsockopt(zmq.RCVHWM, get_hwm())
+        socket.setsockopt(zmq.SNDHWM, get_hwm())
         socket.connect('%s://%s' % (client_address.transport,
                                     client_address.address))
         self.register(socket, register_as, alias, handler)
