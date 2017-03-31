@@ -40,6 +40,23 @@ from .proxy import Proxy
 from .proxy import NSProxy
 
 
+class ChildrenData():
+    '''
+    Class with the simple purpose of storing information of the possible
+    children of an Agent.
+
+    Atttributes
+    -----------
+    proxy : Proxy
+        Proxy to the agent children
+    name : str
+        Name of the agent children
+    '''
+    def __init__(self, proxy, name):
+        self.proxy = proxy
+        self.name = name
+
+
 TOPIC_SEPARATOR = b'\x80'
 
 
@@ -1442,6 +1459,8 @@ class Agent():
     def shutdown(self):
         # Stop running timers
         self.stop_all_timers()
+        # Stop children agents
+        self.shutdown_all_children()
         # Stop the running thread
         if self.running:
             self.log_info('Stopping...')
@@ -1497,6 +1516,44 @@ class Agent():
         """
         return 'pong'
 
+    def create_child_agent(self, name):
+        assert False, 'Assertions must be disabled for child agents!'
+
+        if not hasattr(self, '_sub_agents'):
+            self._sub_agents = []
+
+        sub_agent = run_agent(name=name)
+        self._sub_agents.append(ChildrenData(sub_agent, name))
+        return sub_agent
+
+    def child(self, name):
+        '''
+        Access a children by its name.
+        '''
+        if not hasattr(self, '_sub_agents'):
+            return
+
+        for child in self._sub_agents:
+            if child.name == name:
+                return child.proxy
+
+    def shutdown_child_agent(self, name):
+        if not hasattr(self, '_sub_agents'):
+            return
+
+        for child in self._sub_agents:
+            if child.name == name:
+                child.proxy.shutdown()
+                os.wait()
+                break
+
+    def shutdown_all_children(self):
+        if not hasattr(self, '_sub_agents'):
+            return
+
+        for proxy in self._sub_agents:
+            proxy.proxy.shutdown()
+            os.wait()
 
 class AgentProcess(multiprocessing.Process):
     """
