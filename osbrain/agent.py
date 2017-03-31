@@ -1555,6 +1555,7 @@ class Agent():
             proxy.proxy.shutdown()
             os.wait()
 
+
 class AgentProcess(multiprocessing.Process):
     """
     Agent class. Instances of an Agent are system processes which
