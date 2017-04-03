@@ -1548,6 +1548,7 @@ class Agent():
             if child.name == name:
                 child.proxy.shutdown()
                 os.wait()
+                self._sub_agents.remove(child)
                 break
 
     def shutdown_all_children(self):
@@ -1557,6 +1558,8 @@ class Agent():
         for proxy in self._sub_agents:
             proxy.proxy.shutdown()
             os.wait()
+
+        self._sub_agents = []
 
 
 class AgentProcess(multiprocessing.Process):
