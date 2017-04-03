@@ -153,4 +153,4 @@ def get_hwm():
     int
         Size of the hwm queues.
     """
-    return int(os.getenv('OSBRAIN_DEFAULT_HWM'))
+    return int(config['HWM'])

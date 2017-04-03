@@ -507,7 +507,7 @@ def test_agent_error_permission_denied(nsproxy):
 
 
 def test_hwm(nsproxy):
-    os.environ['OSBRAIN_DEFAULT_HWM'] = '10'
+    osbrain.config['HWM'] = '10'
     addr = AgentAddress(transport='tcp', address='127.0.0.1:15151',
                         kind='PULL', role='server', serializer='pickle')
     a0 = run_agent('a0')
@@ -519,7 +519,7 @@ def test_hwm(nsproxy):
 
 def test_hwm_agent_blocked():
     ns = run_nameserver()
-    os.environ['OSBRAIN_DEFAULT_HWM'] = '10'
+    osbrain.config['HWM'] = '10'
     addr = AgentAddress(transport='tcp', address='127.0.0.1:15151',
                         kind='PULL', role='server', serializer='pickle')
     a0 = run_agent('a0')

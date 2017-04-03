@@ -26,8 +26,8 @@ config = {}
 config['SAFE'] = os.environ.get('OSBRAIN_DEFAULT_SAFE', 'true') != 'false'
 config['SERIALIZER'] = os.environ.get('OSBRAIN_DEFAULT_SERIALIZER', 'pickle')
 config['LINGER'] = float(os.environ.get('OSBRAIN_DEFAULT_LINGER', '1'))
+config['HWM'] = int(os.environ.get('OSBRAIN_DEFAULT_HWM', '0'))
 config['TRANSPORT'] = os.environ.get('OSBRAIN_DEFAULT_TRANSPORT', 'ipc')
-os.environ['OSBRAIN_DEFAULT_HWM'] = '0'
 
 # Set storage folder for IPC socket files
 config['IPC_DIR'] = \
