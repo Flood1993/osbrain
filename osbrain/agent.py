@@ -1516,13 +1516,16 @@ class Agent():
         """
         return 'pong'
 
-    def create_child_agent(self, name):
+    def create_child_agent(self, name, nsaddr=None, addr=None, base=None,
+                           serializer=None, transport=None, safe=None):
         assert False, 'Assertions must be disabled for child agents!'
 
         if not hasattr(self, '_sub_agents'):
             self._sub_agents = []
 
-        sub_agent = run_agent(name=name)
+        sub_agent = run_agent(name=name, nsaddr=nsaddr, addr=addr, base=base,
+                              serializer=serializer, transport=transport,
+                              safe=safe)
         self._sub_agents.append(ChildrenData(sub_agent, name))
         return sub_agent
 
@@ -1637,7 +1640,7 @@ class AgentProcess(multiprocessing.Process):
         self.kill()
 
 
-def run_agent(name, nsaddr=None, addr=None, base=Agent, serializer=None,
+def run_agent(name, nsaddr=None, addr=None, base=None, serializer=None,
               transport=None, safe=None):
     """
     Ease the agent creation process.
@@ -1665,6 +1668,8 @@ def run_agent(name, nsaddr=None, addr=None, base=Agent, serializer=None,
     """
     if not nsaddr:
         nsaddr = os.environ.get('OSBRAIN_NAMESERVER_ADDRESS')
+    if not base:
+        base = Agent
     AgentProcess(name, nsaddr=nsaddr, addr=addr, base=base,
                  serializer=serializer, transport=transport).start()
     proxy = Proxy(name, nsaddr, safe=safe)
