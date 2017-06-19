@@ -898,6 +898,44 @@ class Agent():
         self.register(socket, register_as, alias, handler)
         return client_address
 
+    def unsubscribe_socket_from_topic(self, socket, topic: bytes):
+        '''
+        Unsubscribe a socket from a given topic.
+
+        Parameters
+        ----------
+        socket
+            Identifier of the socket. Must be a valid entry of `self.socket`
+        topic
+            topic which we want to unsubscribe from
+        '''
+        if isinstance(self.address[socket], AgentAddress):
+            self.socket[socket].setsockopt(zmq.UNSUBSCRIBE, topic)
+        if isinstance(self.address[socket], AgentChannel):
+            channel = self.address[socket]
+            socket = channel.receiver
+            treated_topic = channel.uuid + topic
+            self.socket[socket].setsockopt(zmq.UNSUBSCRIBE, treated_topic)
+
+    def subscribe_socket_to_topic(self, socket, topic: bytes):
+        '''
+        Subscribe a socket to a given topic.
+
+        Parameters
+        ----------
+        socket
+            Identifier of the socket. Must be a valid entry of `self.socket`
+        topic
+            topic which we want to subscribe to
+        '''
+        if isinstance(self.address[socket], AgentAddress):
+            self.socket[socket].setsockopt(zmq.SUBSCRIBE, topic)
+        if isinstance(self.address[socket], AgentChannel):
+            channel = self.address[socket]
+            socket = channel.receiver
+            treated_topic = channel.uuid + topic
+            self.socket[socket].setsockopt(zmq.SUBSCRIBE, treated_topic)
+
     def _handle_async_requests(self, data):
         address_uuid, uuid, response = data
         if uuid not in self._pending_requests:
@@ -932,7 +970,7 @@ class Agent():
         curated_handlers = topics_to_bytes(handlers)
         # Subscribe to topics
         for topic in curated_handlers.keys():
-            self.socket[alias].setsockopt(zmq.SUBSCRIBE, topic)
+            self.subscribe_socket_to_topic(alias, topic)
         # Reset handlers
         self._set_handler(self.socket[alias], curated_handlers)
 
