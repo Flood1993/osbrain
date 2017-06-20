@@ -6,6 +6,7 @@ import random
 from shutil import rmtree
 from tempfile import mkdtemp
 from uuid import uuid4
+import pytest
 
 import osbrain
 from osbrain import Agent
@@ -24,46 +25,71 @@ def test_agent_bind_transport_global(nsproxy):
     # Default transport
     agent = run_agent('a0')
     address = agent.bind('PUSH')
-    assert address.transport == 'ipc'
+    assert address.transport == osbrain.config['TRANSPORT']
 
-    # Changing default global transport
+
+def test_agent_bind_transport_global_tcp(nsproxy):
+    """
+    Test global transport TCP.
+    """
     osbrain.config['TRANSPORT'] = 'tcp'
-    agent = run_agent('a1')
+    agent = run_agent('a0')
     address = agent.bind('PUSH')
     assert address.transport == 'tcp'
 
+
+@pytest.mark.skipif(os.name != 'posix', reason='IPC transport not available')
+def test_agent_bind_transport_global_ipc(nsproxy):
+    """
+    Test global transport IPC.
+    """
     osbrain.config['TRANSPORT'] = 'ipc'
-    agent = run_agent('a2')
+    agent = run_agent('a0')
     address = agent.bind('PUSH')
     assert address.transport == 'ipc'
 
 
-def test_agent_bind_transport_agent(nsproxy):
+def test_agent_bind_transport_agent_tcp(nsproxy):
     """
-    Test agent default transport.
+    Test agent TCP transport.
     """
     agent = run_agent('a0', transport='tcp')
     address = agent.bind('PUSH')
     assert address.transport == 'tcp'
 
+
+@pytest.mark.skipif(os.name != 'posix', reason='IPC transport not available')
+def test_agent_bind_transport_agent_ipc(nsproxy):
+    """
+    Test agent IPC transport.
+    """
     agent = run_agent('a1', transport='ipc')
     address = agent.bind('PUSH')
     assert address.transport == 'ipc'
 
 
-def test_agent_bind_transport_bind(nsproxy):
+def test_agent_bind_transport_tcp(nsproxy):
     """
-    Test bind transport.
+    Test TCP bind transport.
     """
     agent = run_agent('a0')
 
     address = agent.bind('PUSH', transport='tcp')
     assert address.transport == 'tcp'
 
+
+@pytest.mark.skipif(os.name != 'posix', reason='IPC transport not available')
+def test_agent_bind_transport_inproc(nsproxy):
+    """
+    Test inproc bind transport.
+    """
+    agent = run_agent('a0')
+
     address = agent.bind('PUSH', transport='inproc')
     assert address.transport == 'inproc'
 
 
+@pytest.mark.skipif(os.name != 'posix', reason='IPC transport not available')
 def test_agent_bind_given_address(nsproxy):
     """
     Test agent binding to an specified address using TCP and IPC transport
@@ -90,6 +116,7 @@ def test_agent_bind_given_address(nsproxy):
     assert address.address == tcp_addr
 
 
+@pytest.mark.skipif(os.name != 'posix', reason='IPC transport not available')
 def test_agent_ipc_from_different_folders(nsproxy):
     """
     IPC should work well even when agents are run from different folders.
