@@ -194,8 +194,7 @@ def wait_agent_attr(agent, name='received', length=None, data=None, value=None,
     return False
 
 
-def synchronize_sync_pub(server, server_alias, server_handler, client,
-                         client_alias, client_handler):
+def synchronize_sync_pub(server, server_alias, client, client_alias):
     '''
     Create a SYNC_PUB/SYNC_SUB channel and connect both agents.
 

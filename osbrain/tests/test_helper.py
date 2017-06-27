@@ -21,8 +21,8 @@ def receive(agent, response):
 
 def test_synchronize_sync_pub(nsproxy):
     """
-    All publications in SYNC_PUB/SYNC_SUB connections stablished through
-    `synchronize_sync_pub` should be received in the other end.
+    Publications sent through SYNC_PUB/SYNC_SUB after synchronazing them
+    should be received without exception.
     """
     server = run_agent('server')
     client = run_agent('client')
@@ -33,8 +33,7 @@ def test_synchronize_sync_pub(nsproxy):
     client.connect(addr, alias='sync_sub', handler=receive)
 
     # Guarantee the PUB/SUB is stablished
-    synchronize_sync_pub(server, 'sync_pub', receive,
-                         client, 'sync_sub', receive)
+    synchronize_sync_pub(server, 'sync_pub', client, 'sync_sub')
 
     # Send the message only once
     server.send('sync_pub', 'Hello')
