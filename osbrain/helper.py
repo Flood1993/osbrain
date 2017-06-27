@@ -210,13 +210,7 @@ def synchronize_sync_pub(server, server_alias, server_handler, client,
         except AttributeError:  # Attribute already deleted
             pass
 
-    # The following is an ugly hack to get the uuid used as the alias for the
-    # SUB socket of the client in the SYNC_PUB channel.
-    channel = client.addr(client_alias)
-    client_addr = channel.twin().sender.twin()
-    addr_to_access_uuid = client.addr(client_addr)
-    client_async_req_uuid = client.get_attr('_async_req_uuid')
-    uuid = client_async_req_uuid[addr_to_access_uuid]
+    uuid = client.get_uuid_used_as_alias_for_sub_in_sync_pub(client_alias)
 
     # Set a temporary custom handler
     client.set_attr(_tmp_attr=False)

@@ -1520,6 +1520,18 @@ class Agent():
         for sock in self.get_unique_external_zmq_sockets():
             sock.close(linger=get_linger())
 
+    def get_uuid_used_as_alias_for_sub_in_sync_pub(self, client_alias):
+        """
+        Return the uuid that was used as the alias for the SUB socket
+        when a connection to a SYNC_PUB channel was made.
+        """
+        channel = self.addr(client_alias)
+        client_addr = channel.twin().sender.twin()
+        addr_to_access_uuid = self.addr(client_addr)
+        uuid = self._async_req_uuid[addr_to_access_uuid]
+
+        return uuid
+
     def ping(self):
         """
         A test method to check the readiness of the agent. Used for testing
