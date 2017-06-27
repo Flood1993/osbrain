@@ -544,9 +544,9 @@ class Agent():
             self.poller.register(socket, zmq.POLLIN)
             self._set_handler(socket, handler)
 
-    def UGLY_get_handler(self, alias):
+    def get_handler(self, alias):
         """
-        This should be private.
+        Get the handler associated to a socket given the socket alias.
         """
         return self.handler[self.socket[alias]]
 
@@ -654,7 +654,7 @@ class Agent():
         self.register(socket, server_address, alias, handler)
         # SUB sockets are a special case
         if kind == 'SUB':
-            self._subscribe(server_address, handler)
+            self.subscribe(server_address, handler)
         return server_address
 
     def _bind_channel(self, kind, alias=None, handler=None, addr=None,
@@ -790,7 +790,7 @@ class Agent():
         if client_address.kind == 'SUB':
             if not alias:
                 alias = client_address
-            self._subscribe(alias, handler)
+            self.subscribe(alias, handler)
         return client_address
 
     def _connect_channel(self, channel, alias=None, handler=None):
@@ -919,10 +919,7 @@ class Agent():
         else:
             handler(self, response)
 
-    def ugly(self, alias, handlers):
-        self._subscribe(alias, handlers)
-
-    def _subscribe(self, alias: str, handlers: Dict[Union[bytes, str], Any]):
+    def subscribe(self, alias: str, handlers: Dict[Union[bytes, str], Any]):
         """
         Subscribe the agent to another agent.
 
