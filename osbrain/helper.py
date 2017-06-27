@@ -192,3 +192,46 @@ def wait_agent_attr(agent, name='received', length=None, data=None, value=None,
             break
         time.sleep(0.01)
     return False
+
+
+def synchronize_sync_pub(server, server_alias, server_handler, client,
+                         client_alias, client_handler):
+    '''
+    Create a SYNC_PUB/SYNC_SUB channel and connect both agents.
+
+    Make sure they have stablished the PUB/SUB communication within the
+    SYNC_PUB/SYNC_SUB channel before returning. This will guarantee that
+    no PUB messages are lost.
+    '''
+    def assert_receive(agent, message, topic=None):
+        try:
+            agent.get_attr('_tmp_attr')
+            agent._tmp_attr = True
+        except AttributeError:  # Attribute already deleted
+            pass
+
+    addr = server.bind('SYNC_PUB', alias=server_alias, handler=server_handler)
+
+    client.set_attr(_tmp_attr=False)
+
+    client.connect(addr, alias=client_alias, handler=assert_receive)
+
+    # Send messages through the PUB socket until the client receives them
+    server.each(0.1, 'send', addr, 'Synchronize', alias='_tmp_timer')
+
+    assert wait_agent_attr(client, name='_tmp_attr', value=True, timeout=5)
+
+    server.stop_timer('_tmp_timer')
+
+    # The following is an ugly hack to get the uuid used as the alias for the
+    # SUB socket of the client in the SYNC_PUB channel.
+    channel = client.addr(client_alias)
+    client_addr = channel.twin().sender.twin()
+    addr_to_access_uuid = client.addr(client_addr)
+    client_async_req_uuid = client.get_attr('_async_req_uuid')
+    uuid = client_async_req_uuid[addr_to_access_uuid]
+
+    # Set the handler passed as a parameter, now that connection is guaranteed
+    client.ugly(uuid, client_handler)
+
+    client.del_attr('_tmp_attr')

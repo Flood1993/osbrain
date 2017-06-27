@@ -9,9 +9,42 @@ from osbrain.helper import logger_received
 from osbrain.helper import agent_dies
 from osbrain.helper import attribute_match_all
 from osbrain.helper import wait_agent_attr
+from osbrain.helper import synchronize_sync_pub
 
 from common import nsproxy  # pragma: no flakes
 from common import agent_logger  # pragma: no flakes
+
+
+def receive(agent, response):
+    agent.received.append(response)
+
+
+def test_synchronize_sync_pub(nsproxy):
+    """
+    All publications in SYNC_PUB/SYNC_SUB connections stablished through
+    `synchronize_sync_pub` should be received in the other end.
+    """
+    server = run_agent('server')
+    client = run_agent('client')
+
+    client.set_attr(received=[])
+
+    # Create a SYNC_PUB channel and guarantee the PUB/SUB is stablished
+    synchronize_sync_pub(server, 'sync_pub', receive,
+                         client, 'sync_sub', receive)
+
+    # Send the message only once
+    server.send('sync_pub', 'Hello')
+
+    assert wait_agent_attr(client, name='received', data='Hello')
+
+    # Check that no temporary attributes remain
+    assert 'Synchronize' not in client.get_attr('received')
+
+    with pytest.raises(AttributeError):
+        client.get_attr('_tmp_attr')
+
+    assert '_tmp_timer' not in server.list_timers()
 
 
 def test_agent_dies(nsproxy):

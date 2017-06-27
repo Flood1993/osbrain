@@ -912,6 +912,9 @@ class Agent():
         else:
             handler(self, response)
 
+    def ugly(self, alias, handlers):
+        self._subscribe(alias, handlers)
+
     def _subscribe(self, alias: str, handlers: Dict[Union[bytes, str], Any]):
         """
         Subscribe the agent to another agent.
@@ -964,6 +967,9 @@ class Agent():
 
     def get_attr(self, name):
         return getattr(self, name)
+
+    def del_attr(self, name):
+        delattr(self, name)
 
     def set_method(self, *args, **kwargs):
         """
