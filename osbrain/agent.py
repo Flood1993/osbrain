@@ -36,6 +36,7 @@ from .address import AgentAddress
 from .address import AgentAddressKind
 from .address import AgentAddressSerializer
 from .address import AgentChannel
+from .address import AgentChannelKind
 from .address import address_to_host_port
 from .address import guess_kind
 from .proxy import Proxy
@@ -1526,6 +1527,8 @@ class Agent():
         when a connection to a SYNC_PUB channel was made.
         """
         channel = self.addr(client_alias)
+        if channel.kind != AgentChannelKind('SYNC_SUB'):
+            raise ValueError('Incorrect channel kind: {}'.format(channel.kind))
         client_addr = channel.twin().sender.twin()
         addr_to_access_uuid = self.addr(client_addr)
         uuid = self._async_req_uuid[addr_to_access_uuid]

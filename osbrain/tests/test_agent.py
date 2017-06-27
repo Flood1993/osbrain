@@ -421,6 +421,45 @@ def test_invalid_handlers(nsproxy):
         agent.bind('REP', handler=1.234)
 
 
+def test_get_uuid_used_as_alias_for_sub_in_sync_pub_sync(nsproxy):
+    """
+    The function should only work for SYNC_SUB channels, and should raise
+    an exception in any other case.
+    """
+    server = run_agent('server')
+    client = run_agent('client')
+
+    sync_pub_addr = server.bind('SYNC_PUB', alias='sync_pub', handler=receive)
+    client.connect(sync_pub_addr, alias='sync_sub', handler=receive)
+
+    # Should work for SYNC_SUB channels
+    assert client.get_uuid_used_as_alias_for_sub_in_sync_pub('sync_sub')
+
+    # Should not work for other channels
+    with pytest.raises(ValueError):
+        server.get_uuid_used_as_alias_for_sub_in_sync_pub('sync_pub')
+
+
+def test_get_uuid_used_as_alias_for_sub_in_sync_pub_async(nsproxy):
+    """
+    The function should only work for SYNC_SUB channels, and should raise
+    an exception in any other case.
+    """
+    server = run_agent('server')
+    client = run_agent('client')
+
+    async_rep_addr = server.bind('ASYNC_REP', alias='async_rep',
+                                 handler=receive)
+    client.connect(async_rep_addr, alias='async_req', handler=receive)
+
+    # Should not work for either channel
+    with pytest.raises(ValueError):
+        client.get_uuid_used_as_alias_for_sub_in_sync_pub('async_req')
+
+    with pytest.raises(ValueError):
+        server.get_uuid_used_as_alias_for_sub_in_sync_pub('async_rep')
+
+
 def test_log_levels(nsproxy):
     """
     Test different log levels: info, warning, error and debug. Debug messages
