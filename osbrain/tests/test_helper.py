@@ -27,9 +27,12 @@ def test_synchronize_sync_pub(nsproxy):
     server = run_agent('server')
     client = run_agent('client')
 
-    client.set_attr(received=[])
+    addr = server.bind('SYNC_PUB', alias='sync_pub', handler=receive)
 
-    # Create a SYNC_PUB channel and guarantee the PUB/SUB is stablished
+    client.set_attr(received=[])
+    client.connect(addr, alias='sync_sub', handler=receive)
+
+    # Guarantee the PUB/SUB is stablished
     synchronize_sync_pub(server, 'sync_pub', receive,
                          client, 'sync_sub', receive)
 

@@ -543,6 +543,12 @@ class Agent():
             self.poller.register(socket, zmq.POLLIN)
             self._set_handler(socket, handler)
 
+    def UGLY_get_handler(self, alias):
+        """
+        This should be private.
+        """
+        return self.handler[self.socket[alias]]
+
     def _set_handler(self, socket, handlers):
         """
         Set the socket handler(s).
