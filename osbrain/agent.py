@@ -547,6 +547,9 @@ class Agent():
     def get_handler(self, alias):
         """
         Get the handler associated to a socket given the socket alias.
+
+        Ideally, this should only be called for alias that represent a
+        SUB socket.
         """
         return self.handler[self.socket[alias]]
 

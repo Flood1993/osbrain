@@ -421,6 +421,21 @@ def test_invalid_handlers(nsproxy):
         agent.bind('REP', handler=1.234)
 
 
+def test_get_handler(nsproxy):
+    """
+    Make sure the actual handler is returned.
+    """
+    server = run_agent('server')
+    client = run_agent('client')
+
+    pub_addr = server.bind('PUB', alias='pub')
+    client.connect(pub_addr, alias='sub', handler=receive)
+
+    assert client.get_handler('sub')
+    with pytest.raises(KeyError):
+        server.get_handler('pub')
+
+
 def test_get_uuid_used_as_alias_for_sub_in_sync_pub_sync(nsproxy):
     """
     The function should only work for SYNC_SUB channels, and should raise
