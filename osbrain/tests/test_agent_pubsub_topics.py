@@ -4,6 +4,7 @@ import pytest
 
 from osbrain import run_agent
 from osbrain.address import AgentAddressSerializer
+from osbrain.helper import wait_agent_attr
 
 from common import nsproxy  # pragma: no flakes
 from common import append_received
@@ -164,3 +165,41 @@ def test_pubsub_topics_raw(nsproxy, serializer):
     assert b'fooWorld' in a5.get_attr('received')
     assert b'foobarFOO' in a5.get_attr('received')
     assert b'foBAR' in a5.get_attr('received')
+
+
+def test_subscribe(nsproxy):
+    """
+    Test the `subscribe` function works as expected for SUB sockets.
+    """
+    def receive_square(agent, message, topic=None):
+        agent.received.append(message**2)
+
+    def receive_cube(agent, message, topic=None):
+        agent.received.append(message**3)
+
+    server = run_agent('server')
+    client = run_agent('client')
+
+    addr = server.bind('PUB', alias='pub')
+    client.set_attr(received=[])
+    client.connect(addr, alias='sub', handler=receive)
+
+    # Give some time for the client to connect
+    time.sleep(0.1)
+
+    server.send('pub', 2)
+    assert wait_agent_attr(client, data=2)
+
+    client.subscribe('sub', handlers={'foo': receive_square,
+                                      'bar': receive_cube})
+
+    server.send('pub', 2, topic='foo')
+    server.send('pub', 2, topic='bar')
+    server.send('pub', 3)
+
+    # Check new handlers were used for different topics
+    assert wait_agent_attr(client, data=4)
+    assert wait_agent_attr(client, data=8)
+
+    # No longer subscribed to all topics
+    assert not wait_agent_attr(client, data=3)
