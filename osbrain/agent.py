@@ -898,7 +898,7 @@ class Agent():
         self.register(socket, register_as, alias, handler)
         return client_address
 
-    def unsubscribe_socket_from_topic(self, socket, topic: bytes):
+    def unsubscribe_from_topic(self, socket, topic: bytes):
         '''
         Unsubscribe a socket from a given topic.
 
@@ -917,7 +917,7 @@ class Agent():
             treated_topic = channel.uuid + topic
             self.socket[socket].setsockopt(zmq.UNSUBSCRIBE, treated_topic)
 
-    def subscribe_socket_to_topic(self, socket, topic: bytes):
+    def subscribe_to_topic(self, socket, topic: bytes):
         '''
         Subscribe a socket to a given topic.
 
@@ -970,7 +970,7 @@ class Agent():
         curated_handlers = topics_to_bytes(handlers)
         # Subscribe to topics
         for topic in curated_handlers.keys():
-            self.subscribe_socket_to_topic(alias, topic)
+            self.subscribe_to_topic(alias, topic)
         # Reset handlers
         self._set_handler(self.socket[alias], curated_handlers)
 
