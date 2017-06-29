@@ -13,10 +13,7 @@ from osbrain.helper import synchronize_sync_pub
 
 from common import nsproxy  # pragma: no flakes
 from common import agent_logger  # pragma: no flakes
-
-
-def receive(agent, response):
-    agent.received.append(response)
+from common import append_received
 
 
 def test_synchronize_sync_pub(nsproxy):
@@ -27,10 +24,10 @@ def test_synchronize_sync_pub(nsproxy):
     server = run_agent('server')
     client = run_agent('client')
 
-    addr = server.bind('SYNC_PUB', alias='sync_pub', handler=receive)
+    addr = server.bind('SYNC_PUB', alias='sync_pub', handler=append_received)
 
     client.set_attr(received=[])
-    client.connect(addr, alias='sync_sub', handler=receive)
+    client.connect(addr, alias='sync_sub', handler=append_received)
 
     # Guarantee the PUB/SUB is stablished
     synchronize_sync_pub(server, 'sync_pub', client, 'sync_sub')
