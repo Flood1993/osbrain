@@ -899,7 +899,7 @@ class Agent():
         return client_address
 
     def unsubscribe_from_topic(self,
-                               socket: Union[AgentAddress, str, zmq.Socket],
+                               socket: Union[AgentAddress, AgentChannel, str],
                                topic: Union[bytes, str]):
         '''
         Unsubscribe a socket from a given topic.
@@ -924,7 +924,8 @@ class Agent():
             treated_topic = channel.uuid + topic
             self.socket[socket].setsockopt(zmq.UNSUBSCRIBE, treated_topic)
 
-    def subscribe_to_topic(self, socket: Union[AgentAddress, str, zmq.Socket],
+    def subscribe_to_topic(self,
+                           socket: Union[AgentAddress, AgentChannel, str],
                            topic: Union[bytes, str]):
         '''
         Subscribe a socket to a given topic.
