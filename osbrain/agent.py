@@ -911,7 +911,7 @@ class Agent():
         '''
         if isinstance(self.address[socket], AgentAddress):
             self.socket[socket].setsockopt(zmq.UNSUBSCRIBE, topic)
-        if isinstance(self.address[socket], AgentChannel):
+        elif isinstance(self.address[socket], AgentChannel):
             channel = self.address[socket]
             socket = channel.receiver
             treated_topic = channel.uuid + topic
@@ -930,7 +930,7 @@ class Agent():
         '''
         if isinstance(self.address[socket], AgentAddress):
             self.socket[socket].setsockopt(zmq.SUBSCRIBE, topic)
-        if isinstance(self.address[socket], AgentChannel):
+        elif isinstance(self.address[socket], AgentChannel):
             channel = self.address[socket]
             socket = channel.receiver
             treated_topic = channel.uuid + topic
