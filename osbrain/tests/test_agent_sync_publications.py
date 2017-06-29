@@ -74,7 +74,9 @@ def on_error(agent):
 
 
 @pytest.mark.parametrize('socket_type', ['PUB', 'SYNC_PUB'])
-def test_change_subscription_topics_sync(nsproxy, socket_type):
+@pytest.mark.parametrize('unsub, sub', [('', 'TOP'),
+                                        (b'', b'TOP')])
+def test_change_subscription_topics_sync(nsproxy, socket_type, unsub, sub):
     '''
     Test for the different options of subscribing/unsubscribing to topics
     in the SYNC_PUB/SYNC_SUB pattern.
@@ -95,8 +97,8 @@ def test_change_subscription_topics_sync(nsproxy, socket_type):
     assert wait_agent_attr(client, name='received', data='hello')
 
     # Only subscribe to 'TOP' topic
-    client.unsubscribe_from_topic('sub', b'')
-    client.subscribe_to_topic('sub', b'TOP')
+    client.unsubscribe_from_topic('sub', unsub)
+    client.subscribe_to_topic('sub', sub)
 
     # Message not received since 'TOP' topic not specified in the send call
     server.send('pub', 'world')
