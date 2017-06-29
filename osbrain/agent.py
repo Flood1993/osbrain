@@ -898,7 +898,9 @@ class Agent():
         self.register(socket, register_as, alias, handler)
         return client_address
 
-    def unsubscribe_from_topic(self, socket, topic: bytes):
+    def unsubscribe_from_topic(self,
+                               socket: Union[AgentAddress, str, zmq.Socket],
+                               topic: bytes):
         '''
         Unsubscribe a socket from a given topic.
 
@@ -906,6 +908,8 @@ class Agent():
         ----------
         socket
             Identifier of the socket. Must be a valid entry of `self.socket`
+            for the PUB/SUB pattern and a valid entry of `self.address` for
+            the SYNC_PUB/SYNC_SUB pattern
         topic
             topic which we want to unsubscribe from
         '''
@@ -917,7 +921,8 @@ class Agent():
             treated_topic = channel.uuid + topic
             self.socket[socket].setsockopt(zmq.UNSUBSCRIBE, treated_topic)
 
-    def subscribe_to_topic(self, socket, topic: bytes):
+    def subscribe_to_topic(self, socket: Union[AgentAddress, str, zmq.Socket],
+                           topic: bytes):
         '''
         Subscribe a socket to a given topic.
 
@@ -925,6 +930,8 @@ class Agent():
         ----------
         socket
             Identifier of the socket. Must be a valid entry of `self.socket`
+            for the PUB/SUB pattern and a valid entry of `self.address` for
+            the SYNC_PUB/SYNC_SUB pattern
         topic
             topic which we want to subscribe to
         '''
