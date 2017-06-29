@@ -95,8 +95,8 @@ def test_change_subscription_topics_sync(nsproxy, socket_type):
     assert wait_agent_attr(client, name='received', data='hello')
 
     # Only subscribe to 'TOP' topic
-    client.unsubscribe_socket_from_topic('sub', b'')
-    client.subscribe_socket_to_topic('sub', b'TOP')
+    client.unsubscribe_from_topic('sub', b'')
+    client.subscribe_to_topic('sub', b'TOP')
 
     # Message not received since 'TOP' topic not specified in the send call
     server.send('pub', 'world')
